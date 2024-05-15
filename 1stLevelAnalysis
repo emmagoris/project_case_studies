@@ -1,1 +1,159 @@
+subjects = ["f1027ao", "f1031ax"]; % Replace with a list of all of the subjects you wish to analyze
 
+user = getenv('USERNAME'); % Will return the username 
+
+for subject=subjects
+    
+    subject = num2str(subject, '%02d'); % Zero-pads each number so that the subject ID is 2 characters long
+    
+    %%%%%%%%%%
+    
+    % Check whether the files have been unzipped. If not, unzip them using
+    % gunzip
+    
+    if isfile(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/sub-' subject '_CuedTS_run-1_bold.nii']) == 0
+        display('Run 1 has not been unzipped; unzipping now')
+        gunzip(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/sub-' subject '_CuedTS_run-1_bold.nii.gz'])
+    else
+        display('Run 1 is already unzipped; doing nothing')
+    end
+
+    if isfile(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/sub-' subject '_CuedTS_run-2_bold.nii']) == 0
+        display('Run 2 has not been unzipped; unzipping now')
+        gunzip(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/sub-' subject '_CuedTS_run-2_bold.nii.gz'])
+    else
+        display('Run 2 is already unzipped; doing nothing')
+    end
+
+    if isfile(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/anat/sub-' subject '_T1w.nii']) == 0
+        display('Anatomical image has not been unzipped; unzipping now')
+        gunzip(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/anat/sub-' subject '_T1w.nii.gz'])
+    else
+        display('Anatomical image is already unzipped; doing nothing')
+    end
+    
+
+    %%%%%%%%%%
+
+    % Execute the code specified in the SPM GUI
+    
+    participantDirs = ['C:\Users\goris\OneDrive\Documenten\CuedTS\sub-' subject '\1stLevel'];
+    participantDirs = cellstr(participantDirs);
+
+    matlabbatch{1}.spm.stats.fmri_spec.dir = participantDirs;
+    matlabbatch{1}.spm.stats.fmri_spec.timing.units = 'secs';
+    matlabbatch{1}.spm.stats.fmri_spec.timing.RT = 1.2;
+    matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = 16;
+    matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = 8;
+    %%
+
+    file_paths_run1 = cell(650, 1);
+
+    for i = 1:650
+        file_paths_run1{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-1_bold.nii,%d', user, subject, subject, i);
+        disp(file_paths_run1{i});
+        % Your code to use file_paths{i} goes here
+    end
+
+
+    for i = 1:numel(file_paths_run1)
+        matlabbatch{1}.spm.stats.fmri_spec.sess(1).scans{i} = file_paths_run1{i};
+    end
+    
+    %%
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).name = 'Inc';
+    
+    % Load the timing files for each condition for each run
+
+    data_incongruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run1.txt']);
+
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).onset = data_incongruent_run1(:,1);
+    %%
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).duration = 8.5;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).orth = 1;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).name = 'Con';
+    %%
+    data_congruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run1.txt']);
+
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).onset = data_congruent_run1(:,1);
+
+    %%
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).duration = 8.5;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).orth = 1;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).multi = {''};
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).regress = struct('name', {}, 'val', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).multi_reg = {''};
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).hpf = 128;
+    %%
+    file_paths_run2 = cell(650, 1); % amount of volumes this task has (i.e., 650 rows)
+
+    for i = 1:650
+        file_paths_run2{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-1_bold.nii,%d', user, subject, subject, i);
+        disp(file_paths_run2{i});
+      
+    end
+
+
+    for i = 1:numel(file_paths_run2)
+        matlabbatch{1}.spm.stats.fmri_spec.sess(2).scans{i} = file_paths_run2{i};
+    end
+
+    %%
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).name = 'Inc';
+    %%
+    %%
+    data_incongruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run2.txt']);
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).onset = data_incongruent_run2(:,1);
+    %%
+    
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).duration = 8.5;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).orth = 1;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).name = 'Con';
+
+    data_congruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run2.txt']);
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).onset = data_congruent_run2(:,1);
+    %%
+
+    %%
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).duration = 8.5;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).orth = 1;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).multi = {''};
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).regress = struct('name', {}, 'val', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).multi_reg = {''};
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).hpf = 128;
+    matlabbatch{1}.spm.stats.fmri_spec.fact = struct('name', {}, 'levels', {});
+    matlabbatch{1}.spm.stats.fmri_spec.bases.hrf.derivs = [0 0];
+    matlabbatch{1}.spm.stats.fmri_spec.volt = 1;
+    matlabbatch{1}.spm.stats.fmri_spec.global = 'None';
+    matlabbatch{1}.spm.stats.fmri_spec.mthresh = 0.8;
+    matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
+    matlabbatch{1}.spm.stats.fmri_spec.cvi = 'AR(1)';
+    matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = cfg_dep('fMRI model specification: SPM.mat File', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
+    matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
+    matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
+    matlabbatch{3}.spm.stats.con.spmmat(1) = cfg_dep('Model estimation: SPM.mat File', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'Inc-Con';
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.weights = [1 -1];
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'replsc';
+    matlabbatch{3}.spm.stats.con.consess{2}.tcon.name = 'Con-Inc';
+    matlabbatch{3}.spm.stats.con.consess{2}.tcon.weights = [-1 1];
+    matlabbatch{3}.spm.stats.con.consess{2}.tcon.sessrep = 'replsc';
+    matlabbatch{3}.spm.stats.con.consess{3}.tcon.name = 'Inc';
+    matlabbatch{3}.spm.stats.con.consess{3}.tcon.weights = [1 0];
+    matlabbatch{3}.spm.stats.con.consess{3}.tcon.sessrep = 'replsc';
+    matlabbatch{3}.spm.stats.con.consess{4}.tcon.name = 'Con';
+    matlabbatch{3}.spm.stats.con.consess{4}.tcon.weights = [0 1];
+    matlabbatch{3}.spm.stats.con.consess{4}.tcon.sessrep = 'replsc';
+    matlabbatch{3}.spm.stats.con.delete = 0;
+
+    spm_jobman('run', matlabbatch);
+
+end
