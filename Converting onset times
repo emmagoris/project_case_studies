@@ -1,0 +1,64 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% this script was used to obtain the onset times %%
+%% for each run based on  event files of this run %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Converts timing files from BIDS format into a two-column format that can be read by SPM
+% The columns are:
+% 1. Onset (in seconds); and
+% 2. Duration (in seconds)
+
+% Set working memory to file-map that contains all files % 
+
+new_directory = "D:/case_studies/derivatives/fmriprep-1.3.2/";
+cd(new_directory);
+
+%subjects = ["f2157me", "f2499cq", "f2593wi", "f2648qw", "f2709ul", "f2968sp", "f3300jh", "f3387yq", "f3469wa", "f3526dz","f3680fb", "f3681wf", "f3996sp", "f4138ge", "f4310gw", "f4354bs", "f4467ur", "f4796rs", "f4831tn", "f5001ob", "f5004cr", "f5094na", "f5094ya", "f5386yx"]; 
+% Replace with a list of all of the subjects you wish to analyze
+
+for subject=subjects % loop over all subjects 
+    
+    subject = num2str(subject, '%02d'); % Zero-pads each number so that the subject ID is 2 characters long
+
+    cd(['sub-' subject '/ses-wave1bas/func']) % Navigate to the subject's directory
+
+    Run1_onsetTimes = tdfread(['sub-' subject '_ses-wave1bas_func_sub-' subject '_ses-wave1bas_task-Stern_acq-mb4AP_run-1_events'], '\t'); % Read onset times file (i.e., events file)
+    Run1_onsetTimes.trial_type = string(Run1_onsetTimes.trial_type); 
+    Run1_Incongruent = [];
+    Run1_Congruent = [];
+
+    for i = 1:length(Run1_onsetTimes.onset)
+        if strtrim(Run1_onsetTimes.trial_type(i,:)) == "RN"
+            Run1_Incongruent = [Run1_Incongruent; Run1_onsetTimes.onset(i,:)];
+        elseif strtrim(Run1_onsetTimes.trial_type(i,:)) == "NN"
+            Run1_Congruent = [Run1_Congruent; Run1_onsetTimes.onset(i,:)];
+        end
+    end
+
+    Run2_onsetTimes = tdfread(['sub-' subject '_ses-wave1bas_func_sub-' subject '_ses-wave1bas_task-Stern_acq-mb4PA_run-2_events'], '\t');
+    % Read onset times file
+    Run2_onsetTimes.trial_type = string(Run2_onsetTimes.trial_type); % Convert char array to string array, to make logical comparisons easier
+
+    Run2_Incongruent = [];
+    Run2_Congruent = [];
+
+    for i = 1:length(Run2_onsetTimes.onset)
+        if strtrim(Run2_onsetTimes.trial_type(i,:)) == "RN"
+            Run2_Incongruent = [Run2_Incongruent; Run2_onsetTimes.onset(i,:)];
+        elseif strtrim(Run2_onsetTimes.trial_type(i,:)) == "NN"
+            Run2_Congruent = [Run2_Congruent; Run2_onsetTimes.onset(i,:)];
+        end
+    end
+
+    % Save timing files into text files
+    % these files will be used in 1st level analysis 
+
+    save('Stern_incongruent_run1.txt', 'Run1_Incongruent', '-ASCII');
+    save('Stern_congruent_run1.txt', 'Run1_Congruent', '-ASCII');
+
+    save('Stern_incongruent_run2.txt', 'Run2_Incongruent', '-ASCII');
+    save('Stern_congruent_run2.txt', 'Run2_Congruent', '-ASCII');
+
+    % Go back to directory
+    cd(new_directory)
