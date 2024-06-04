@@ -1,15 +1,22 @@
-subjects = ["f1027ao", "f1031ax"]; % Replace with a list of all of the subjects you wish to analyze
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This script contains the generated MATLAB script from the SPM-gui batch %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-user = getenv('USERNAME'); % Will return the username 
+%% Preprocessing of the fMRI data was conducted by the original researchers %%
+%% Their preprocessed BOLD files can be found on the openNeuro site %%
+%% https://openneuro.org/datasets/ds003465/versions/1.0.6 %%
 
-for subject=subjects
+%% What follows is the code for performing the first level analysis of one task %%
+%% This means that we performed this same analysis for all three tasks separately - each time with their corresponding BOLD and event files %%
+
+subjects = ["f1027ao", "f1031ax"]; % This variable is made so that later on the same batch can be looped over for each subject you want to analyse
+
+for subject=subjects % loop which will perform the first level analysis for each subject specified above 
     
     subject = num2str(subject, '%02d'); % Zero-pads each number so that the subject ID is 2 characters long
     
-    %%%%%%%%%%
-    
-    % Check whether the files have been unzipped. If not, unzip them using
-    % gunzip
+    % Before starting any analysis: check whether bold files have been unzipped; if not, unzip via gunzip function 
+    % Replace all file-paths with the correct path and name of your files
     
     if isfile(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/sub-' subject '_CuedTS_run-1_bold.nii']) == 0
         display('Run 1 has not been unzipped; unzipping now')
@@ -32,54 +39,56 @@ for subject=subjects
         display('Anatomical image is already unzipped; doing nothing')
     end
     
-
     %%%%%%%%%%
-
-    % Execute the code specified in the SPM GUI
+    %% Next the loop will specify all the parameters for the first-level analysis as indicated in the SPM GUI batch %%
     
-    participantDirs = ['C:\Users\goris\OneDrive\Documenten\CuedTS\sub-' subject '\1stLevel'];
-    participantDirs = cellstr(participantDirs);
+    participantDirs = ['C:\Users\goris\OneDrive\Documenten\CuedTS\sub-' subject '\1stLevel']; % folder that will become directory for the 1st level analysis
+    participantDirs = cellstr(participantDirs); % all input should be cellstrings
 
     matlabbatch{1}.spm.stats.fmri_spec.dir = participantDirs;
     matlabbatch{1}.spm.stats.fmri_spec.timing.units = 'secs';
-    matlabbatch{1}.spm.stats.fmri_spec.timing.RT = 1.2;
+    matlabbatch{1}.spm.stats.fmri_spec.timing.RT = 1.2;  
     matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t = 16;
     matlabbatch{1}.spm.stats.fmri_spec.timing.fmri_t0 = 8;
     %%
 
-    file_paths_run1 = cell(650, 1);
+    %% RUN 1 %%
+
+    file_paths_run1 = cell(650, 1); % object that will allow us to load all volumes of the bold images & to use them as input later
+    % this should have the amount of rows e.g., 650, as there are volumes in your bold run 
 
     for i = 1:650
-        file_paths_run1{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-1_bold.nii,%d', user, subject, subject, i);
+        file_paths_run1{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-1_bold.nii,%d', user, subject, subject, i); % select for each subject in loop the correct amount of volumes
         disp(file_paths_run1{i});
-        % Your code to use file_paths{i} goes here
+        % Change path files to your correct ones 
     end
 
 
     for i = 1:numel(file_paths_run1)
-        matlabbatch{1}.spm.stats.fmri_spec.sess(1).scans{i} = file_paths_run1{i};
+        matlabbatch{1}.spm.stats.fmri_spec.sess(1).scans{i} = file_paths_run1{i}; % use these volumes as input in the 1st level analysis 
     end
     
     %%
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).name = 'Inc';
-    
-    % Load the timing files for each condition for each run
+    %% The following part will specify the different conditions in the runs %%
+    %% We were interested in the incongruent / congruent contrast; i.e., high vs. low cognitive demanding trials 
 
-    data_incongruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run1.txt']);
+    % First condition = incongruent 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).name = 'Inc';
+
+    data_incongruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run1.txt']); % Load the timing files for each condition for each run
 
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).onset = data_incongruent_run1(:,1);
-    %%
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).duration = 8.5;
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).tmod = 0;
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).orth = 1;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).name = 'Con';
-    %%
-    data_congruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run1.txt']);
+    %% 
 
+    % Second condition = congruent 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).name = 'Con';
+    data_congruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run1.txt']); % loading the timing files (obtained from the original event files)
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).onset = data_congruent_run1(:,1);
 
-    %%
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).duration = 8.5;
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).tmod = 0;
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
@@ -89,38 +98,35 @@ for subject=subjects
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).multi_reg = {''};
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).hpf = 128;
     %%
+
+    %% RUN 2 %%
     file_paths_run2 = cell(650, 1); % amount of volumes this task has (i.e., 650 rows)
 
     for i = 1:650
-        file_paths_run2{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-1_bold.nii,%d', user, subject, subject, i);
+        file_paths_run2{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-2_bold.nii,%d', user, subject, subject, i);
         disp(file_paths_run2{i});
-      
     end
-
 
     for i = 1:numel(file_paths_run2)
         matlabbatch{1}.spm.stats.fmri_spec.sess(2).scans{i} = file_paths_run2{i};
     end
 
     %%
+    %% First condition = INCONGRUENT 
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).name = 'Inc';
-    %%
-    %%
     data_incongruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run2.txt']);
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).onset = data_incongruent_run2(:,1);
-    %%
     
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).duration = 8.5;
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).tmod = 0;
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).orth = 1;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).name = 'Con';
 
+    %% Second condition = CONGRUENT 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).name = 'Con';
     data_congruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run2.txt']);
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).onset = data_congruent_run2(:,1);
-    %%
 
-    %%
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).duration = 8.5;
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).tmod = 0;
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
@@ -136,9 +142,13 @@ for subject=subjects
     matlabbatch{1}.spm.stats.fmri_spec.mthresh = 0.8;
     matlabbatch{1}.spm.stats.fmri_spec.mask = {''};
     matlabbatch{1}.spm.stats.fmri_spec.cvi = 'AR(1)';
+
+    %% Second step is estimate the GLM model for each subject based on the SPM.mat File that was just created 
     matlabbatch{2}.spm.stats.fmri_est.spmmat(1) = cfg_dep('fMRI model specification: SPM.mat File', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
     matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
     matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
+
+    %% Third step is to calculate the contrast for Inc-Con based on the SPM.mat file of the model estimation 
     matlabbatch{3}.spm.stats.con.spmmat(1) = cfg_dep('Model estimation: SPM.mat File', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
     matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'Inc-Con';
     matlabbatch{3}.spm.stats.con.consess{1}.tcon.weights = [1 -1];
