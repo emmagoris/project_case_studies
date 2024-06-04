@@ -1,0 +1,20 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% the contrast images of the 1st level analysis %% 
+%% inputted the 'result' option of the SPM gui   %%
+%% to obtain statistical info of contrast images %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% input = contrast image created during first level analysis 
+% indicating the contrast btw incongruent & congruent trials
+
+% masking? NONE 
+    % whole brain analysis done
+    % later cluster of voxels extracted based on MNI coordinates reported in literature & neurosynth atlas
+% p-value correction? NO
+    % significance level = 0.01 -> every voxel that reaches this threshold will be taken into consideration
+    % while selecting clusters later on, correction for multiple correction will be included 
+% extent clusters? 10 
+    % result output will only show clusters existing of 10 (or more) continuous clusters
+    % selecting significant active clusters:   
+        % i.e., clusters of voxels that were significantly more active during incongruent than congruent trials
+        % only considering those clusters that reached the 0.05 significance level with the family wise error correction (multiple comparison)
