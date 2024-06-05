@@ -4,7 +4,9 @@
 
 %% Preprocessing of the fMRI data was conducted by the original researchers %%
 %% Their preprocessed BOLD files can be found on the openNeuro site %%
+%% These files can be found under "derivatives" -> "fmriprep-1.3.2."%%
 %% https://openneuro.org/datasets/ds003465/versions/1.0.6 %%
+%% Example file name: sub-f1027ao_ses-wave1bas_task-Stroop_acq-mb4PA_run-2_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz %%
 
 %% What follows is the code for performing the first level analysis of one task %%
 %% This means that we performed this same analysis for all three tasks separately - each time with their corresponding BOLD and event files %%
@@ -41,6 +43,7 @@ for subject=subjects % loop which will perform the first level analysis for each
     
     %%%%%%%%%%
     %% Next the loop will specify all the parameters for the first-level analysis as indicated in the SPM GUI batch %%
+    % First step in this analysis is specifying the GLM for this data 
     
     participantDirs = ['C:\Users\goris\OneDrive\Documenten\CuedTS\sub-' subject '\1stLevel']; % folder that will become directory for the 1st level analysis
     participantDirs = cellstr(participantDirs); % all input should be cellstrings
@@ -70,27 +73,27 @@ for subject=subjects % loop which will perform the first level analysis for each
     
     %%
     %% The following part will specify the different conditions in the runs %%
-    %% We were interested in the incongruent / congruent contrast; i.e., high vs. low cognitive demanding trials 
+    %  We were interested in the incongruent / congruent contrast; i.e., high vs. low cognitive demanding trials 
 
     % First condition = incongruent 
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).name = 'Inc';
 
     data_incongruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run1.txt']); % Load the timing files for each condition for each run
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).onset = data_incongruent_run1(:,1); % use the timing information to let MATLAB know this is when the inc condition happened
 
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).onset = data_incongruent_run1(:,1);
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).duration = 8.5;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).tmod = 0;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).duration = 8.5; % duration of each trial -> this was the same for ever participant on every trial
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).tmod = 0; 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {}); % other parameters specified in GUI (default options)
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(1).orth = 1;
     %% 
 
     % Second condition = congruent 
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).name = 'Con';
     data_congruent_run1 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run1.txt']); % loading the timing files (obtained from the original event files)
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).onset = data_congruent_run1(:,1);
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).onset = data_congruent_run1(:,1); % use timing onset to let matlab know when the congruent trials happen
 
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).duration = 8.5;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).duration = 8.5; % same duration for all trials and pp 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).tmod = 0; % next lines are parameters specified in GUI (default options)
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).cond(2).orth = 1;
     matlabbatch{1}.spm.stats.fmri_spec.sess(1).multi = {''};
@@ -100,35 +103,37 @@ for subject=subjects % loop which will perform the first level analysis for each
     %%
 
     %% RUN 2 %%
+    %% repeat same process as run 1 %%
     file_paths_run2 = cell(650, 1); % amount of volumes this task has (i.e., 650 rows)
 
-    for i = 1:650
+    for i = 1:650 % load all the bold volumes for this run 
         file_paths_run2{i} = sprintf('C:/Users/%s/OneDrive/Documenten/CuedTS/sub-%s/func/sub-%s_CuedTS_run-2_bold.nii,%d', user, subject, subject, i);
         disp(file_paths_run2{i});
     end
 
-    for i = 1:numel(file_paths_run2)
+    for i = 1:numel(file_paths_run2) % use these files as input for the 1st level analysis 
         matlabbatch{1}.spm.stats.fmri_spec.sess(2).scans{i} = file_paths_run2{i};
     end
 
     %%
+    %% Specify the conditions for the first level analysis (included in GLM)
     %% First condition = INCONGRUENT 
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).name = 'Inc';
-    data_incongruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run2.txt']);
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).onset = data_incongruent_run2(:,1);
+    data_incongruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/incongruent_run2.txt']); % load timing files of this run
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).onset = data_incongruent_run2(:,1); % select onset times to specify when incongruent trials happened
     
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).duration = 8.5;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).duration = 8.5; % duration for each trial 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).tmod = 0; % other default parameters specified in gui
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).pmod = struct('name', {}, 'param', {}, 'poly', {});
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(1).orth = 1;
 
     %% Second condition = CONGRUENT 
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).name = 'Con';
-    data_congruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run2.txt']);
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).onset = data_congruent_run2(:,1);
+    data_congruent_run2 = load(['/Users/' user '/OneDrive/Documenten/CuedTS/sub-' subject '/func/congruent_run2.txt']); % load timing files 
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).onset = data_congruent_run2(:,1); % select onset times to specify when congruent trials happened
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).duration = 8.5; % duration for each trial
 
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).duration = 8.5;
-    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).tmod = 0;
+    matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).tmod = 0; % other default parameters set in gui
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).pmod = struct('name', {}, 'param', {}, 'poly', {});
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).cond(2).orth = 1;
     matlabbatch{1}.spm.stats.fmri_spec.sess(2).multi = {''};
@@ -148,22 +153,14 @@ for subject=subjects % loop which will perform the first level analysis for each
     matlabbatch{2}.spm.stats.fmri_est.write_residuals = 0;
     matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
 
-    %% Third step is to calculate the contrast for Inc-Con based on the SPM.mat file of the model estimation 
+    %% Third step is to calculate the contrast for Inc-Con based on the SPM.mat file of the model estimation through the contrast manager 
     matlabbatch{3}.spm.stats.con.spmmat(1) = cfg_dep('Model estimation: SPM.mat File', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','spmmat'));
-    matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'Inc-Con';
-    matlabbatch{3}.spm.stats.con.consess{1}.tcon.weights = [1 -1];
-    matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'replsc';
-    matlabbatch{3}.spm.stats.con.consess{2}.tcon.name = 'Con-Inc';
-    matlabbatch{3}.spm.stats.con.consess{2}.tcon.weights = [-1 1];
-    matlabbatch{3}.spm.stats.con.consess{2}.tcon.sessrep = 'replsc';
-    matlabbatch{3}.spm.stats.con.consess{3}.tcon.name = 'Inc';
-    matlabbatch{3}.spm.stats.con.consess{3}.tcon.weights = [1 0];
-    matlabbatch{3}.spm.stats.con.consess{3}.tcon.sessrep = 'replsc';
-    matlabbatch{3}.spm.stats.con.consess{4}.tcon.name = 'Con';
-    matlabbatch{3}.spm.stats.con.consess{4}.tcon.weights = [0 1];
-    matlabbatch{3}.spm.stats.con.consess{4}.tcon.sessrep = 'replsc';
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.name = 'Inc-Con'; % incongruent - congruent contrast => will return voxels that are more A during inc than con trials
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.weights = [1 -1]; % weights of contrast
+    matlabbatch{3}.spm.stats.con.consess{1}.tcon.sessrep = 'replsc'; % this option makes sure that the contrast is rescaled for the amount of runs you have (i.e., here we did have 2 sessions of the same trial types)
+
     matlabbatch{3}.spm.stats.con.delete = 0;
 
-    spm_jobman('run', matlabbatch);
+    spm_jobman('run', matlabbatch); % execute the full first level analysis 
 
 end
