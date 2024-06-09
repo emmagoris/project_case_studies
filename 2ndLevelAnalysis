@@ -1,19 +1,5 @@
 ########################STATISTICAL 2nd LEVEL ANALYSES R STUDIO SCRIPT################################
 ###################################################################################
-
-# Load packages
-library(ggplot2)
-library(dplyr)
-library(stringr)
-library(lme4)
-library(stats)
-library(optimx)
-library(car)
-library(tidyr)
-library(lattice)
-library(pwr)
-library(readxl)
-
 # Load data
 # Via personal path
 path <- ".xlsx"
