@@ -1,0 +1,188 @@
+########################STATISTICAL 2nd LEVEL ANALYSES R STUDIO SCRIPT################################
+###################################################################################
+
+# Load packages
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(lme4)
+library(stats)
+library(optimx)
+library(car)
+library(tidyr)
+library(lattice)
+library(pwr)
+library(readxl)
+
+# Load data
+# Via personal path
+path <- ".xlsx"
+Data <- read_excel(path)
+
+# Directly by excel file in R
+Data <- Data_file
+
+#####STEP 1: FINETUNE THE DATAFILE #####
+# Set all NA values to 0 (i.e., no significan activation in ROI)
+Data$`T-value`[Data$`T-value` == "NA"] <- 0
+
+# T-values are  numeric data
+Data$`T-value` <- as.numeric(Data$`T-value`)
+
+
+#####STEP 2: TEST HYPOTHESIS 1 (i.e., Activation of three ROIs in each task) #####
+# Only count T-values > 0
+filtered_data <- subset(Data, `T-value` > 0)
+summary_data <- filtered_data %>%
+  group_by(Task, ROI) %>%
+  summarise(subject_count = n_distinct(Subject))
+
+# Add indicator when all ROIs active
+data <- Data
+data <- data %>%
+  mutate(active = as.integer( `T-value`> 0))
+
+# Create subject x Task x ROI matrix
+presence_matrix <- data %>%
+  select(Subject, Task, ROI, active) %>%
+  spread(ROI, active, fill = 0)
+
+# Check whether all ROIs are active 
+presence_matrix <- presence_matrix %>%
+  mutate(all_active = ACC & DLPFC & premotor)
+
+# Merge the info to get an overview
+summary_data <- presence_matrix %>%
+  group_by(Task) %>%
+  summarise(total_subjects = n(),
+            all_active_count = sum(all_active),
+            not_all_active_count = total_subjects - all_active_count)
+
+# Transform to percentages
+summary_data <- presence_matrix %>%
+  group_by(Task) %>%
+  summarise(total_subjects = n(),
+            all_active_count = sum(all_active),
+            not_all_active_count = total_subjects - all_active_count) %>%
+  mutate(percentage_all_active = (all_active_count / total_subjects) * 100)
+
+# Visualize this information
+blue_palette <- c("#add8e6", "#87ceeb", "#4682b4", "#1e90ff", "#0000cd", "#00008b")
+ggplot(summary_data, aes(x = Task, y = percentage_all_active, fill = Task)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = blue_palette) +
+  labs(title = '',
+       x = 'Task',
+       y = 'Subjects with CCN active (%)') +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  ) +
+  ylim(0, 100) +
+  scale_x_discrete(labels = c("cued" = "Cued", "stern" = "Sternberg", "stroop" = "Stroop"))
+
+# Test for eacht task whether the number of subjects who show activation in all three ROIs is bigger than those who do not show this pattern
+results <- list()
+for (task in unique(presence_matrix$Task)) {
+  task_data <- summary_data %>% filter(Task == !!task)
+  
+  # Make contingency table
+  contingency_table <- matrix(c(task_data$all_active_count, 
+                                task_data$not_all_active_count,
+                                task_data$total_subjects - task_data$all_active_count,
+                                task_data$not_all_active_count), 
+                              nrow = 2, byrow = TRUE)
+  
+  # Compute Fisher's test
+  fisher_test <- fisher.test(contingency_table)
+  results[[task]] <- fisher_test
+}
+
+# Print results of the Fisher's test
+for (task in names(results)) {
+  cat("Fisher's exact test for task:", task, "\n")
+  print(results[[task]])
+}
+
+#####STEP 3: TEST HYPOTHESIS 2 (i.e., Interaction between Task and ROI) #####
+
+# Standardize the T-values
+`T-value_z` <- scale(Data$`T-value`)
+
+# Define the model
+model <- lm(`T-value_z` ~ Task*ROI, data = Data)
+
+# Test the model
+Anova(model, type = "III")
+
+# Summary output of the model
+summary(model)
+
+# Visualize the effects #
+
+# Define color palette
+blue_palette <- c("#add8e6", "#87ceeb", "#4682b4", "#1e90ff", "#0000cd", "#00008b")
+
+# Mean T-value for each ROI
+summary_roi <- Data %>%
+  group_by(ROI) %>%
+  summarise(
+    mean_T = mean(`T-value`, na.rm = TRUE),
+    std_T = sd(`T-value`, na.rm = TRUE))
+
+# Plot of mean T-value for each ROI 
+ggplot(summary_roi, aes(x = ROI, y = mean_T, fill = ROI)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = pmax(0, mean_T - std_T), ymax = mean_T + std_T),
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  scale_fill_manual(values = blue_palette, labels = c("premotor" = "Premotor")) +
+  labs(title = 'Average T-values per ROI',
+       x = 'ROI',
+       y = 'Average T-value') +
+  theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.title = element_text(face = "bold")) +
+  scale_x_discrete(labels = c("premotor" = "Premotor"))
+
+# Mean T value for each task
+summary_task <- Data %>%
+  group_by(Task) %>%
+  summarise(
+    mean_T = mean(`T-value`, na.rm = TRUE),
+    std_T = sd(`T-value`, na.rm = TRUE))
+
+# Plot of mean T-value for each Task
+ggplot(summary_task, aes(x = Task, y = mean_T, fill = Task)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = pmax(0, mean_T - std_T), ymax = mean_T + std_T),
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  scale_fill_manual(values = blue_palette, labels = c("cued" = "Cued", "stern" = "Sternberg", "stroop" = "Stroop")) +
+  labs(title = 'Average T-values per Task',
+       x = 'Task',
+       y = 'Average T-value') +
+  theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.title = element_text(face = "bold")) +
+  scale_x_discrete(labels = c("cued" = "Cued", "stern" = "Sternberg", "stroop" = "Stroop"))
+
+# Plot of Task x ROI
+ggplot(summary, aes(x = Task, y = mean_T, fill = ROI)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = pmax(0, mean_T - std_T), ymax = mean_T + std_T),
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  scale_fill_manual(values = blue_palette, labels = c("premotor" = "Premotor")) +
+  labs(title = '',
+       x = 'Task',
+       y = 'Average T-value') +
+  theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.title = element_text(face = "bold")) +
+  scale_x_discrete(labels = c("cued" = "Cued", "stern" = "Sternberg", "stroop" = "Stroop"))
