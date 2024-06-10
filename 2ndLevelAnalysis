@@ -106,6 +106,9 @@ Anova(model, type = "III")
 # Summary output of the model
 summary(model)
 
+# Compute eta-squared effectsizes
+etaSquared(model, type = 3, anova = FALSE)
+
 # Visualize the effects #
 
 # Define color palette
