@@ -14,6 +14,6 @@ To replicate our analysis following steps should be followed:
 
 2nd level analysis of the extracted t-values were analysed in R Studio (v. 2022.07.2). The full script of these analyses can be found in the '2ndLevelAnalysis' file. 
 - (1) Prior to running the code, the following packages should be loaded in the directory:
-ggplot2, dplyr, stringr, lme4, stats, optimx, car, tidyr, lattice, pwr, and readxl
+ggplot2, dplyr, stringr, lme4, stats, optimx, car, tidyr, lattice, pwr, lsr, and readxl.
 - (2) run the code of  "2ndLevelAnalysis"
 - (3) Model results can be observed in the console, and figures will be plot.
