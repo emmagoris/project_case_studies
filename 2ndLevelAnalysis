@@ -94,11 +94,8 @@ for (task in names(results)) {
 
 #####STEP 3: TEST HYPOTHESIS 2 (i.e., Interaction between Task and ROI) #####
 
-# Standardize the T-values
-`T-value_z` <- scale(Data$`T-value`)
-
 # Define the model
-model <- lm(`T-value_z` ~ Task*ROI, data = Data)
+model <- lm(`T-value` ~ Task*ROI, data = Data)
 
 # Test the model
 Anova(model, type = "III")
